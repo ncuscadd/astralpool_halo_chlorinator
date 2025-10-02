@@ -397,14 +397,27 @@ class GPOModeSelect(
             action = GPOAppActions.On
         else:
             action = GPOAppActions.NoAction
+            _LOGGER.warning("Invalid GPO option: %s", option)
+            return
 
         _LOGGER.debug(
             "Select GPO%d entity state changed to %s", self.gpo_number, action
         )
-        await self.coordinator.chlorinator.async_write_gpo_action(
-            action, self.gpo_number
-        )
-        self.coordinator.reset_data_age()
-        await asyncio.sleep(1)
-        await self.coordinator.async_request_refresh()
+        
+        try:
+            await self.coordinator.chlorinator.async_write_gpo_action(
+                action, self.gpo_number
+            )
+            self.coordinator.reset_data_age()
+            await asyncio.sleep(1)
+            await self.coordinator.async_request_refresh()
+        except ValueError as e:
+            _LOGGER.error("Invalid GPO configuration: %s", e)
+        except Exception as e:
+            _LOGGER.error(
+                "Failed to set GPO%d mode to %s: %s",
+                self.gpo_number,
+                option,
+                e,
+            )
 

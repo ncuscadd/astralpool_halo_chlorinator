@@ -70,26 +70,51 @@ async def async_write_gpo_action(
         chlorinator: The HaloChlorinatorAPI instance
         action: The GPO action to perform
         gpo_number: The GPO output number (1-4)
+
+    Raises:
+        ValueError: If gpo_number is not in range 1-4
+        Exception: If BLE communication fails
     """
+    if not 1 <= gpo_number <= 4:
+        raise ValueError(f"GPO number must be between 1 and 4, got {gpo_number}")
+
+    _LOGGER.info(
+        "Writing GPO action: GPO%d -> %s", gpo_number, GPOAppActions(action).name
+    )
+
     while chlorinator._connected:
         _LOGGER.debug("Already connected, Waiting")
         await asyncio.sleep(1)
 
-    async with BleakClient(chlorinator._ble_device, timeout=10) as client:
-        chlorinator._session_key = await client.read_gatt_char(UUID_SLAVE_SESSION_KEY_2)
-        _LOGGER.debug("Got session key %s", chlorinator._session_key.hex())
+    try:
+        async with BleakClient(chlorinator._ble_device, timeout=10) as client:
+            chlorinator._session_key = await client.read_gatt_char(
+                UUID_SLAVE_SESSION_KEY_2
+            )
+            _LOGGER.debug("Got session key %s", chlorinator._session_key.hex())
 
-        mac = encrypt_mac_key(
-            chlorinator._session_key, bytes(chlorinator._access_code, "utf_8")
+            mac = encrypt_mac_key(
+                chlorinator._session_key, bytes(chlorinator._access_code, "utf_8")
+            )
+            _LOGGER.debug("Mac key to write %s", mac)
+            await client.write_gatt_char(UUID_MASTER_AUTHENTICATION_2, mac)
+
+            data = GPOAction(action, gpo_number).__bytes__()
+            _LOGGER.debug("Data to write %s", data.hex())
+            data = encrypt_characteristic(data, chlorinator._session_key)
+            _LOGGER.debug("Encrypted data to write %s", data.hex())
+            await client.write_gatt_char(UUID_RX_CHARACTERISTIC, data)
+            
+            _LOGGER.info(
+                "Successfully wrote GPO action for GPO%d: %s",
+                gpo_number,
+                GPOAppActions(action).name,
+            )
+    except Exception as e:
+        _LOGGER.error(
+            "Failed to write GPO action for GPO%d: %s", gpo_number, str(e)
         )
-        _LOGGER.debug("Mac key to write %s", mac)
-        await client.write_gatt_char(UUID_MASTER_AUTHENTICATION_2, mac)
-
-        data = GPOAction(action, gpo_number).__bytes__()
-        _LOGGER.debug("Data to write %s", data.hex())
-        data = encrypt_characteristic(data, chlorinator._session_key)
-        _LOGGER.debug("Encrypted data to write %s", data.hex())
-        await client.write_gatt_char(UUID_RX_CHARACTERISTIC, data)
+        raise
 
 
 def add_gpo_support(chlorinator: HaloChlorinatorAPI) -> None:

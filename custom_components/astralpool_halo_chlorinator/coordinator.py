@@ -91,11 +91,15 @@ class ChlorinatorDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     gpo_mode_key = f"GPO{gpo_num}_Mode"
                     if gpo_outlet_key in data and data[gpo_outlet_key] == 1:
                         _LOGGER.debug("%s : %s", gpo_outlet_key, data[gpo_outlet_key])
+                        if hasattr(self, "add_sensor_callback"):
+                            await self.add_sensor_callback(f"GPO{gpo_num}Enabled")
                         if hasattr(self, "add_dynamic_select_entities"):
                             await self.add_dynamic_select_entities(f"GPO{gpo_num}Enabled")
                     # Also expose GPO mode even if we haven't seen OutletEnabled yet
                     elif gpo_mode_key in data:
                         _LOGGER.debug("%s : %s", gpo_mode_key, data[gpo_mode_key])
+                        if hasattr(self, "add_sensor_callback"):
+                            await self.add_sensor_callback(f"GPO{gpo_num}Enabled")
                         if hasattr(self, "add_dynamic_select_entities"):
                             await self.add_dynamic_select_entities(f"GPO{gpo_num}Enabled")
 
