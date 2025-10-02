@@ -21,11 +21,23 @@ Please also support https://github.com/pbutterworth/astralpool_chlorinator for h
 
 \*\*This component will set up the following platforms.\*\*
 
-| Platform        | Description                                      |
-| --------------- | ------------------------------------------------ |
-| `binary_sensor` | Show something `True` or `False`.                |
-| `sensor`        | Show info from Astral Pool Halo Chlorinator API. |
-| `select`        | Control the chlorinator mode (off/auto/manual)   |
+| Platform        | Description                                                      |
+| --------------- | ---------------------------------------------------------------- |
+| `binary_sensor` | Show something `True` or `False`.                                |
+| `sensor`        | Show info from Astral Pool Halo Chlorinator API.                 |
+| `select`        | Control the chlorinator mode, heater, solar, lighting, and GPOs  |
+
+## Features
+
+- **Chlorinator Control**: Adjust chlorination levels (Off, Auto, Low, Medium, High)
+- **Heater Control**: Control pool heater (Off, On)
+- **Solar Control**: Control solar heating (Off, Auto, On)
+- **Lighting Control**: Control pool lights (Off, Auto, On)
+- **GPO Control**: Control up to 4 GPO (General Purpose Output) devices (Off, Auto, On)
+- **Sensors**: Monitor pH, ORP, temperature, and equipment status
+- **Auto-detection**: Automatically discovers and creates entities for available features
+
+For detailed information about GPO support, see [GPO_SUPPORT.md](GPO_SUPPORT.md).
 
 # Pre-Requisites
 

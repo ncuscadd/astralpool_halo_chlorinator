@@ -5,13 +5,11 @@ from __future__ import annotations
 import logging
 
 from homeassistant import config_entries
-from homeassistant.components.sensor import (
-    EntityCategory,
-    SensorDeviceClass,
-    SensorEntity,
-    SensorEntityDescription,
-    SensorStateClass,
-)
+from homeassistant.components.sensor import EntityCategory
+from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorEntityDescription
+from homeassistant.components.sensor import SensorStateClass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -213,6 +211,30 @@ SOLAR_SENSOR_TYPES: dict[str, SensorEntityDescription] = {
 }
 
 
+# GPO sensor types - created dynamically for each GPO (1-4)
+def create_gpo_sensor_types(gpo_number: int) -> dict[str, SensorEntityDescription]:
+    """Create sensor descriptions for a specific GPO."""
+    return {
+        f"GPO{gpo_number}_Mode": SensorEntityDescription(
+            key=f"GPO{gpo_number}_Mode",
+            icon="mdi:power-plug",
+            name=f"GPO{gpo_number} Mode",
+            native_unit_of_measurement=None,
+            device_class=SensorDeviceClass.ENUM,
+            state_class=None,
+        ),
+        f"GPO{gpo_number}_State": SensorEntityDescription(
+            key=f"GPO{gpo_number}_State",
+            icon="mdi:power-plug",
+            name=f"GPO{gpo_number} State",
+            native_unit_of_measurement=None,
+            device_class=SensorDeviceClass.ENUM,
+            state_class=None,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    }
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: config_entries.ConfigEntry,
@@ -227,6 +249,16 @@ async def async_setup_entry(
             "SolarEnabled": SOLAR_SENSOR_TYPES,
             "HeaterEnabled": HEATER_SENSOR_TYPES,
         }
+
+        # Check if this is a GPO sensor type
+        if sensor_type.startswith("GPO") and sensor_type.endswith("Enabled"):
+            # Extract GPO number from "GPO1Enabled", "GPO2Enabled", etc.
+            try:
+                gpo_num = int(sensor_type[3])  # Get the number after "GPO"
+                sensor_types_dict[sensor_type] = create_gpo_sensor_types(gpo_num)
+            except (ValueError, IndexError):
+                pass
+
         sensor_descs = sensor_types_dict.get(sensor_type, {})
 
         new_entities = []
