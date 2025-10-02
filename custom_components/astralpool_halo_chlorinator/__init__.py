@@ -15,6 +15,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import DOMAIN
 from .coordinator import ChlorinatorDataUpdateCoordinator
+from .gpo_helper import add_gpo_support
 from .models import ChlorinatorData
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SELECT]
@@ -38,6 +39,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if ble_device.name == "HCHLOR":
         # true
         chlorinator = HaloChlorinatorAPI(ble_device, accesscode)
+        # Add GPO support to the chlorinator instance
+        add_gpo_support(chlorinator)
     else:
         chlorinator = ChlorinatorAPI(ble_device, accesscode)
 

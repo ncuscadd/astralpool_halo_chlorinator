@@ -85,6 +85,20 @@ class ChlorinatorDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     if hasattr(self, "add_dynamic_select_entities"):
                         await self.add_dynamic_select_entities("LightingEnabled")
 
+                # Check for GPO outputs that are enabled
+                for gpo_num in range(1, 5):  # GPO1 to GPO4
+                    gpo_outlet_key = f"GPO{gpo_num}_OutletEnabled"
+                    gpo_mode_key = f"GPO{gpo_num}_Mode"
+                    if gpo_outlet_key in data and data[gpo_outlet_key] == 1:
+                        _LOGGER.debug("%s : %s", gpo_outlet_key, data[gpo_outlet_key])
+                        if hasattr(self, "add_dynamic_select_entities"):
+                            await self.add_dynamic_select_entities(f"GPO{gpo_num}Enabled")
+                    # Also expose GPO mode even if we haven't seen OutletEnabled yet
+                    elif gpo_mode_key in data:
+                        _LOGGER.debug("%s : %s", gpo_mode_key, data[gpo_mode_key])
+                        if hasattr(self, "add_dynamic_select_entities"):
+                            await self.add_dynamic_select_entities(f"GPO{gpo_num}Enabled")
+
             elif self._data_age >= 15:  # 15 polling events  = 5 minutes
                 self.data = {}
                 _LOGGER.error("Failed _gatherdata, giving up: %s", self._data_age)
