@@ -1,14 +1,13 @@
 """Data coordinator for receiving Chlorinator updates."""
-
-from datetime import timedelta
 import logging
+from datetime import timedelta
 from typing import Any
-
-from pychlorinator.halochlorinator import HaloChlorinatorAPI
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import UpdateFailed
+from pychlorinator.halochlorinator import HaloChlorinatorAPI
 
 from .const import DOMAIN
 
@@ -94,14 +93,18 @@ class ChlorinatorDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         if hasattr(self, "add_sensor_callback"):
                             await self.add_sensor_callback(f"GPO{gpo_num}Enabled")
                         if hasattr(self, "add_dynamic_select_entities"):
-                            await self.add_dynamic_select_entities(f"GPO{gpo_num}Enabled")
+                            await self.add_dynamic_select_entities(
+                                f"GPO{gpo_num}Enabled"
+                            )
                     # Also expose GPO mode even if we haven't seen OutletEnabled yet
                     elif gpo_mode_key in data:
                         _LOGGER.debug("%s : %s", gpo_mode_key, data[gpo_mode_key])
                         if hasattr(self, "add_sensor_callback"):
                             await self.add_sensor_callback(f"GPO{gpo_num}Enabled")
                         if hasattr(self, "add_dynamic_select_entities"):
-                            await self.add_dynamic_select_entities(f"GPO{gpo_num}Enabled")
+                            await self.add_dynamic_select_entities(
+                                f"GPO{gpo_num}Enabled"
+                            )
 
             elif self._data_age >= 15:  # 15 polling events  = 5 minutes
                 self.data = {}

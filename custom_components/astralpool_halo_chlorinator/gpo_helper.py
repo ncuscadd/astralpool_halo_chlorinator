@@ -2,7 +2,6 @@
 
 This module extends the pychlorinator library with GPO-specific functionality.
 """
-
 from __future__ import annotations
 
 import asyncio
@@ -10,15 +9,13 @@ import logging
 import struct
 from enum import IntEnum
 
-from pychlorinator.halochlorinator import (
-    HaloChlorinatorAPI,
-    UUID_MASTER_AUTHENTICATION_2,
-    UUID_RX_CHARACTERISTIC,
-    UUID_SLAVE_SESSION_KEY_2,
-    encrypt_characteristic,
-    encrypt_mac_key,
-)
 from bleak import BleakClient
+from pychlorinator.halochlorinator import encrypt_characteristic
+from pychlorinator.halochlorinator import encrypt_mac_key
+from pychlorinator.halochlorinator import HaloChlorinatorAPI
+from pychlorinator.halochlorinator import UUID_MASTER_AUTHENTICATION_2
+from pychlorinator.halochlorinator import UUID_RX_CHARACTERISTIC
+from pychlorinator.halochlorinator import UUID_SLAVE_SESSION_KEY_2
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +36,7 @@ class GPOAction:
         self,
         action: GPOAppActions = GPOAppActions.NoAction,
         gpo_number: int = 1,  # GPO1-GPO4
-        header_bytes: bytes = b"\x03\xF8\x01",  # 504
+        header_bytes: bytes = b"\x03\xf8\x01",  # 504
     ) -> None:
         """Initialize GPO action.
 
@@ -104,16 +101,14 @@ async def async_write_gpo_action(
             data = encrypt_characteristic(data, chlorinator._session_key)
             _LOGGER.debug("Encrypted data to write %s", data.hex())
             await client.write_gatt_char(UUID_RX_CHARACTERISTIC, data)
-            
+
             _LOGGER.info(
                 "Successfully wrote GPO action for GPO%d: %s",
                 gpo_number,
                 GPOAppActions(action).name,
             )
     except Exception as e:
-        _LOGGER.error(
-            "Failed to write GPO action for GPO%d: %s", gpo_number, str(e)
-        )
+        _LOGGER.error("Failed to write GPO action for GPO%d: %s", gpo_number, str(e))
         raise
 
 

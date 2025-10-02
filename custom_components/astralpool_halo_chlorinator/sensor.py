@@ -1,17 +1,14 @@
 """Platform for sensor integration."""
-
 from __future__ import annotations
 
 import logging
 
 from homeassistant import config_entries
-from homeassistant.components.sensor import (
-    EntityCategory,
-    SensorDeviceClass,
-    SensorEntity,
-    SensorEntityDescription,
-    SensorStateClass,
-)
+from homeassistant.components.sensor import EntityCategory
+from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorEntityDescription
+from homeassistant.components.sensor import SensorStateClass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -212,6 +209,7 @@ SOLAR_SENSOR_TYPES: dict[str, SensorEntityDescription] = {
     ),
 }
 
+
 # GPO sensor types - created dynamically for each GPO (1-4)
 def create_gpo_sensor_types(gpo_number: int) -> dict[str, SensorEntityDescription]:
     """Create sensor descriptions for a specific GPO."""
@@ -250,7 +248,7 @@ async def async_setup_entry(
             "SolarEnabled": SOLAR_SENSOR_TYPES,
             "HeaterEnabled": HEATER_SENSOR_TYPES,
         }
-        
+
         # Check if this is a GPO sensor type
         if sensor_type.startswith("GPO") and sensor_type.endswith("Enabled"):
             # Extract GPO number from "GPO1Enabled", "GPO2Enabled", etc.
@@ -259,7 +257,7 @@ async def async_setup_entry(
                 sensor_types_dict[sensor_type] = create_gpo_sensor_types(gpo_num)
             except (ValueError, IndexError):
                 pass
-        
+
         sensor_descs = sensor_types_dict.get(sensor_type, {})
 
         new_entities = []

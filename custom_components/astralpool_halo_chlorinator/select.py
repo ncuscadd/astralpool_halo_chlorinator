@@ -1,11 +1,8 @@
 """Platform for select integration."""
-
 from __future__ import annotations
 
 import asyncio
 import logging
-
-from pychlorinator import halo_parsers
 
 from homeassistant import config_entries
 from homeassistant.components.select import SelectEntity
@@ -14,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from pychlorinator import halo_parsers
 
 from .const import DOMAIN
 from .coordinator import ChlorinatorDataUpdateCoordinator
@@ -329,9 +327,7 @@ class LightingModeSelect(
         await self.async_select_option("Off")
 
 
-class GPOModeSelect(
-    CoordinatorEntity[ChlorinatorDataUpdateCoordinator], SelectEntity
-):
+class GPOModeSelect(CoordinatorEntity[ChlorinatorDataUpdateCoordinator], SelectEntity):
     """Representation of a GPO Select entity."""
 
     _attr_icon = "mdi:power"
@@ -403,7 +399,7 @@ class GPOModeSelect(
         _LOGGER.debug(
             "Select GPO%d entity state changed to %s", self.gpo_number, action
         )
-        
+
         try:
             await self.coordinator.chlorinator.async_write_gpo_action(
                 action, self.gpo_number
@@ -420,4 +416,3 @@ class GPOModeSelect(
                 option,
                 e,
             )
-

@@ -4,14 +4,15 @@ from __future__ import annotations
 import logging
 
 from bleak_retry_connector import get_device
-from pychlorinator.chlorinator import ChlorinatorAPI
-from pychlorinator.halochlorinator import HaloChlorinatorAPI
-
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_ACCESS_TOKEN, CONF_ADDRESS, Platform
-from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.const import CONF_ACCESS_TOKEN
+from homeassistant.const import CONF_ADDRESS
+from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from pychlorinator.chlorinator import ChlorinatorAPI
+from pychlorinator.halochlorinator import HaloChlorinatorAPI
 
 from .const import DOMAIN
 from .coordinator import ChlorinatorDataUpdateCoordinator
