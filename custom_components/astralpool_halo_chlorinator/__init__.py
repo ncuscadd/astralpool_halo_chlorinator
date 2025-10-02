@@ -1,4 +1,5 @@
 """The Astral Pool Halo Chlorinator BLE integration."""
+
 from __future__ import annotations
 
 import logging

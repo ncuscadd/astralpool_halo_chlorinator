@@ -1,4 +1,5 @@
 """Data coordinator for receiving Chlorinator updates."""
+
 import logging
 from datetime import timedelta
 from typing import Any

@@ -2,6 +2,7 @@
 
 This module extends the pychlorinator library with GPO-specific functionality.
 """
+
 from __future__ import annotations
 
 import asyncio
