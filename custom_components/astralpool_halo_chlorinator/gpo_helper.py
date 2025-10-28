@@ -15,10 +15,14 @@ from pychlorinator.halochlorinator import encrypt_characteristic
 from pychlorinator.halochlorinator import encrypt_mac_key
 from pychlorinator.halochlorinator import HaloChlorinatorAPI
 from pychlorinator.halochlorinator import UUID_MASTER_AUTHENTICATION_2
-from pychlorinator.halochlorinator import UUID_RX_CHARACTERISTIC
 from pychlorinator.halochlorinator import UUID_SLAVE_SESSION_KEY_2
 
 _LOGGER = logging.getLogger(__name__)
+
+# GPO-specific BLE characteristic UUID based on actual device communication logs
+# Service UUID: 00000211-b2d1-43f0-9b88-960cebf8b91e
+# Characteristic UUID: 00000212-b2d1-43f0-9b88-960cebf8b91e (Handle: 0x0008)
+UUID_GPO_CHARACTERISTIC = "00000212-b2d1-43f0-9b88-960cebf8b91e"
 
 
 class GPOAppActions(IntEnum):
@@ -86,30 +90,93 @@ async def async_write_gpo_action(
 
     try:
         async with BleakClient(chlorinator._ble_device, timeout=10) as client:
+            _LOGGER.debug(
+                "BLE connection established to device: %s", chlorinator._ble_device
+            )
+
+            # Read session key
             chlorinator._session_key = await client.read_gatt_char(
                 UUID_SLAVE_SESSION_KEY_2
             )
             _LOGGER.debug("Got session key %s", chlorinator._session_key.hex())
 
+            # Authenticate with device
             mac = encrypt_mac_key(
                 chlorinator._session_key, bytes(chlorinator._access_code, "utf_8")
             )
             _LOGGER.debug("Mac key to write %s", mac)
             await client.write_gatt_char(UUID_MASTER_AUTHENTICATION_2, mac)
+            _LOGGER.debug("Authentication successful")
 
+            # Prepare GPO command
             data = GPOAction(action, gpo_number).__bytes__()
-            _LOGGER.debug("Data to write %s", data.hex())
+            _LOGGER.debug("GPO command data to write: %s", data.hex())
+
+            # Encrypt the data
             data = encrypt_characteristic(data, chlorinator._session_key)
-            _LOGGER.debug("Encrypted data to write %s", data.hex())
-            await client.write_gatt_char(UUID_RX_CHARACTERISTIC, data)
+            _LOGGER.debug("Encrypted GPO command data: %s", data.hex())
+
+            # Validate characteristic is available
+            try:
+                services = await client.get_services()
+                gpo_uuid_lower = UUID_GPO_CHARACTERISTIC.lower()
+
+                # Find the GPO characteristic
+                gpo_char = None
+                for service in services:
+                    for char in service.characteristics:
+                        if char.uuid.lower() == gpo_uuid_lower:
+                            gpo_char = char
+                            break
+                    if gpo_char:
+                        break
+
+                if gpo_char:
+                    _LOGGER.debug(
+                        "Found GPO characteristic: %s (Handle: %s)",
+                        gpo_char.uuid,
+                        hex(gpo_char.handle) if hasattr(gpo_char, "handle") else "N/A",
+                    )
+                else:
+                    _LOGGER.warning(
+                        "GPO characteristic %s not found in device services. "
+                        "Will attempt write anyway as characteristic may not be "
+                        "enumerable. Available characteristics: %s",
+                        UUID_GPO_CHARACTERISTIC,
+                        [
+                            char.uuid
+                            for service in services
+                            for char in service.characteristics
+                        ],
+                    )
+            except Exception as e:
+                _LOGGER.warning(
+                    "Could not validate GPO characteristic availability: %s. "
+                    "Will proceed with write attempt.",
+                    e,
+                )
+
+            # Write GPO command to the correct characteristic
+            _LOGGER.debug(
+                "Writing to GPO characteristic UUID: %s", UUID_GPO_CHARACTERISTIC
+            )
+            await client.write_gatt_char(UUID_GPO_CHARACTERISTIC, data)
 
             _LOGGER.info(
                 "Successfully wrote GPO action for GPO%d: %s",
                 gpo_number,
                 GPOAppActions(action).name,
             )
+    except ValueError as e:
+        _LOGGER.error("Invalid GPO configuration: %s", e)
+        raise
     except Exception as e:
-        _LOGGER.error("Failed to write GPO action for GPO%d: %s", gpo_number, str(e))
+        _LOGGER.error(
+            "Failed to write GPO action for GPO%d: %s. "
+            "Ensure the device is in range and not connected to another app.",
+            gpo_number,
+            str(e),
+        )
         raise
 
 
