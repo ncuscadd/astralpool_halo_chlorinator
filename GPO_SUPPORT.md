@@ -18,9 +18,18 @@ This implementation adds full Home Assistant support for controlling GPO (Genera
 
 ## Technical Details
 
+### BLE Communication
+
+The GPO control uses the following BLE characteristics:
+
+**Service UUID**: `00000211-b2d1-43f0-9b88-960cebf8b91e`  
+**Characteristic UUID**: `00000212-b2d1-43f0-9b88-960cebf8b91e` (Handle: 0x0008)
+
+This characteristic was identified from actual device communication logs and differs from the standard RX characteristic used for other commands.
+
 ### BLE Command Structure
 
-The GPO control uses BLE characteristic 504 (0x1F8) with the following command structure:
+The GPO control command structure is 20 bytes total:
 
 ```
 Header: 0x03, 0xF8, 0x01 (3 bytes)
@@ -110,24 +119,56 @@ logger:
    - Ensure your Halo device has GPO outputs configured
    - Check the logs for `GPO{n}_OutletEnabled` or `GPO{n}_Mode` messages
    - Verify your device is within BLE range
+   - Restart Home Assistant after updating the integration
 
 2. **Commands not working**:
    - Check debug logs for BLE communication errors
    - Ensure no other app (e.g., mobile app) is connected to the device
    - Verify the GPO is properly wired and configured in the device
+   - Look for "Failed to write GPO action" messages in the logs
+   - Confirm the device shows the correct BLE characteristic UUID
 
 3. **State not updating**:
    - The state updates on the next polling cycle (20 seconds)
    - Check that the coordinator is successfully gathering data
    - Review logs for any BLE connection issues
 
+4. **BLE Communication Issues**:
+   - Verify the device is advertising and discoverable
+   - Check Bluetooth adapter is working: `sudo hciconfig`
+   - Ensure sufficient BLE range and no interference
+   - Look for "GPO characteristic not found" warnings in logs
+   - If characteristic UUID errors occur, the device firmware may differ
+
+### Debug Log Messages
+
+When GPO commands are executed, you should see:
+
+```
+INFO: Writing GPO action: GPO{n} -> {action}
+DEBUG: BLE connection established to device: {device}
+DEBUG: Got session key {hex}
+DEBUG: Authentication successful
+DEBUG: GPO command data to write: {hex}
+DEBUG: Encrypted GPO command data: {hex}
+DEBUG: Found GPO characteristic: 00000212-b2d1-43f0-9b88-960cebf8b91e (Handle: 0x0008)
+DEBUG: Writing to GPO characteristic UUID: 00000212-b2d1-43f0-9b88-960cebf8b91e
+INFO: Successfully wrote GPO action for GPO{n}: {action}
+```
+
+If you see warnings about the characteristic not being found, this indicates a potential firmware or hardware variation in your device.
+
 ## Protocol Notes
 
-The GPO control protocol follows the same pattern as other Halo accessories:
+The GPO control protocol follows the same authentication pattern as other Halo accessories:
 - Uses the same authentication and encryption as other BLE commands
-- Command characteristic: UUID_RX_CHARACTERISTIC
+- **Command characteristic**: `00000212-b2d1-43f0-9b88-960cebf8b91e` (GPO-specific)
 - Response is received via the standard polling mechanism
 - State is read from EquipmentModeStateCharacteristicV2 (characteristic 206)
+
+**Important**: GPO commands use a dedicated BLE characteristic (UUID: 00000212-b2d1-43f0-9b88-960cebf8b91e) 
+that differs from the standard RX characteristic used by other accessories like Heater (502), 
+Solar (503), and Lighting (501). This was determined through actual device communication log analysis.
 
 ## Testing
 
