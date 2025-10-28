@@ -2,6 +2,7 @@
 
 This module extends the pychlorinator library with GPO-specific functionality.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -118,24 +119,33 @@ async def async_write_gpo_action(
             # Validate characteristic is available
             try:
                 services = await client.get_services()
-                gpo_char_found = False
-                for service in services:
-                    for char in service.characteristics:
-                        if char.uuid.lower() == UUID_GPO_CHARACTERISTIC.lower():
-                            gpo_char_found = True
-                            _LOGGER.debug(
-                                "Found GPO characteristic: %s (Handle: %s)",
-                                char.uuid,
-                                hex(char.handle) if hasattr(char, "handle") else "N/A",
-                            )
-                            break
-                    if gpo_char_found:
-                        break
+                # Check if GPO characteristic exists
+                gpo_char_found = any(
+                    char.uuid.lower() == UUID_GPO_CHARACTERISTIC.lower()
+                    for service in services
+                    for char in service.characteristics
+                )
 
-                if not gpo_char_found:
+                if gpo_char_found:
+                    # Find the characteristic to log its handle
+                    for service in services:
+                        for char in service.characteristics:
+                            if char.uuid.lower() == UUID_GPO_CHARACTERISTIC.lower():
+                                _LOGGER.debug(
+                                    "Found GPO characteristic: %s (Handle: %s)",
+                                    char.uuid,
+                                    (
+                                        hex(char.handle)
+                                        if hasattr(char, "handle")
+                                        else "N/A"
+                                    ),
+                                )
+                                break
+                else:
                     _LOGGER.warning(
                         "GPO characteristic %s not found in device services. "
-                        "Available characteristics: %s",
+                        "Will attempt write anyway as characteristic may not be "
+                        "enumerable. Available characteristics: %s",
                         UUID_GPO_CHARACTERISTIC,
                         [
                             char.uuid
@@ -145,7 +155,9 @@ async def async_write_gpo_action(
                     )
             except Exception as e:
                 _LOGGER.warning(
-                    "Could not validate GPO characteristic availability: %s", e
+                    "Could not validate GPO characteristic availability: %s. "
+                    "Will proceed with write attempt.",
+                    e,
                 )
 
             # Write GPO command to the correct characteristic
