@@ -119,28 +119,24 @@ async def async_write_gpo_action(
             # Validate characteristic is available
             try:
                 services = await client.get_services()
-                # Check if GPO characteristic exists
-                gpo_char_found = any(
-                    char.uuid.lower() == UUID_GPO_CHARACTERISTIC.lower()
-                    for service in services
-                    for char in service.characteristics
-                )
+                gpo_uuid_lower = UUID_GPO_CHARACTERISTIC.lower()
 
-                if gpo_char_found:
-                    # Find the characteristic to log its handle
-                    for service in services:
-                        for char in service.characteristics:
-                            if char.uuid.lower() == UUID_GPO_CHARACTERISTIC.lower():
-                                _LOGGER.debug(
-                                    "Found GPO characteristic: %s (Handle: %s)",
-                                    char.uuid,
-                                    (
-                                        hex(char.handle)
-                                        if hasattr(char, "handle")
-                                        else "N/A"
-                                    ),
-                                )
-                                break
+                # Find the GPO characteristic
+                gpo_char = None
+                for service in services:
+                    for char in service.characteristics:
+                        if char.uuid.lower() == gpo_uuid_lower:
+                            gpo_char = char
+                            break
+                    if gpo_char:
+                        break
+
+                if gpo_char:
+                    _LOGGER.debug(
+                        "Found GPO characteristic: %s (Handle: %s)",
+                        gpo_char.uuid,
+                        hex(gpo_char.handle) if hasattr(gpo_char, "handle") else "N/A",
+                    )
                 else:
                     _LOGGER.warning(
                         "GPO characteristic %s not found in device services. "
